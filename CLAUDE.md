@@ -163,6 +163,16 @@ Frontend config (hardcoded in `index.html`):
 
 ## Changelog
 
+### v1.3 — Audio Fix & Robust Download
+- **Fixed: no audio on Instagram videos (again)** — format fallback chain previously included `bestvideo` (video-only) before `best` (combined). Removed that middle step. New chain: `bestvideo+bestaudio/best` — if streams can't be merged, fall back to best single combined stream (always has audio), never video-only.
+- **Fixed: Pinterest downloads failing** — yt-dlp writes intermediate fragment files (`tmpBase.f123.mp4`, `tmpBase.f456.m4a`) before producing final output. Old code checked for `tmpFile` exactly; if the filename differed slightly it returned "file not found". New `findOutput()` function scans the temp dir for any file starting with the unique `tmpBase` prefix, prefers `.mp4`.
+- **Fixed: Railway still running old code** — error message "Invalid or missing Instagram URL" confirmed old deploy was cached. Force clear build cache in Railway dashboard before deploying.
+- Added `cleanup()` helper to delete all temp fragments on failure or disconnect.
+- `fs` is now imported at top of file (was `require`d inline).
+- Health endpoint now also reports ffmpeg version.
+- `BASE_ARGS` constant shared between `/info` and `/download` routes.
+- Updated user-agent to iOS 17.
+
 ### v1.2 — Pinterest Support
 - Added Pinterest video download support
 - Replaced `isInstagramUrl()` with `isSupportedUrl()` — validates against a list of supported hostnames including all Pinterest regional domains (`pinterest.com`, `pinterest.co.uk`, `pinterest.fr`, etc.) and short links (`pin.it`)

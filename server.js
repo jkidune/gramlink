@@ -1,56 +1,55 @@
 /**
- * GramLink — Backend Server
- * Requires: Node.js 18+, yt-dlp installed on system
- *
- * Install deps:  npm install
- * Install yt-dlp: https://github.com/yt-dlp/yt-dlp#installation
- * Start server:  node server.js
+ * GramLink — Backend Server v1.3
+ * Requires: Node.js 18+, yt-dlp, ffmpeg
  */
 
 const express = require('express');
-const cors = require('cors');
+const cors    = require('cors');
+const fs      = require('fs');
+const path    = require('path');
+const os      = require('os');
 const { execFile, spawn } = require('child_process');
-const path = require('path');
-const os = require('os');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3001;
 
-// ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
-
-// Serve the frontend from the same folder
 app.use(express.static(path.join(__dirname)));
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Supported platforms ───────────────────────────────────────────────────────
 const SUPPORTED_HOSTS = [
   'www.instagram.com', 'instagram.com',
-  'www.pinterest.com', 'pinterest.com',
-  'pin.it',                              // Pinterest short links
+  'www.pinterest.com', 'pinterest.com', 'pin.it',
   'www.pinterest.co.uk', 'pinterest.co.uk',
-  'www.pinterest.fr',   'pinterest.fr',
-  'www.pinterest.de',   'pinterest.de',
-  'www.pinterest.ca',   'pinterest.ca',
-  'www.pinterest.com.au',
+  'www.pinterest.fr',    'pinterest.fr',
+  'www.pinterest.de',    'pinterest.de',
+  'www.pinterest.ca',    'pinterest.ca',
+  'www.pinterest.com.au','pinterest.com.au',
 ];
 
 function isSupportedUrl(url) {
   try {
     const u = new URL(url);
     return SUPPORTED_HOSTS.some(h => u.hostname === h);
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function detectPlatform(url) {
   try {
     const host = new URL(url).hostname;
-    if (host.includes('pinterest') || host === 'pin.it') return 'pinterest';
-    if (host.includes('instagram')) return 'instagram';
+    if (host.includes('pinterest') || host === 'pin.it') return 'Pinterest';
+    if (host.includes('instagram')) return 'Instagram';
   } catch {}
-  return 'unknown';
+  return 'Video';
+}
+
+function detectType(url) {
+  if (detectPlatform(url) === 'Pinterest') return 'Pin';
+  if (url.includes('/reel/'))    return 'Reel';
+  if (url.includes('/stories/')) return 'Story';
+  if (url.includes('/p/'))       return 'Post';
+  return 'Video';
 }
 
 function formatDuration(seconds) {
@@ -60,181 +59,197 @@ function formatDuration(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function detectType(url) {
-  const platform = detectPlatform(url);
-  if (platform === 'pinterest') return 'Pin';
-  if (url.includes('/reel/')) return 'Reel';
-  if (url.includes('/stories/')) return 'Story';
-  if (url.includes('/p/')) return 'Post';
-  return 'Video';
-}
+// ── Format selectors ──────────────────────────────────────────────────────────
+// KEY FIX: never fall back to bestvideo alone (no audio).
+// Chain: merge best streams → best single combined stream → absolute best.
+const FORMAT_MAP = {
+  best:    'bestvideo+bestaudio/best',
+  '1080p': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+  '720p':  'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+  '480p':  'bestvideo[height<=480]+bestaudio/best[height<=480]/best',
+};
+
+const BASE_ARGS = [
+  '--no-playlist',
+  '--no-warnings',
+  '--socket-timeout', '30',
+  '--extractor-retries', '3',
+  '--user-agent',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+];
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
-/**
- * GET /info?url=...
- * Returns video metadata (title, uploader, duration, available qualities)
- */
 app.get('/info', (req, res) => {
   const { url } = req.query;
 
   if (!url || !isSupportedUrl(url)) {
-    return res.status(400).json({ error: 'Unsupported URL. Please paste an Instagram or Pinterest link.' });
+    return res.status(400).json({ error: 'Unsupported URL. Paste an Instagram or Pinterest link.' });
   }
 
-  const args = [
-    '--dump-json',
-    '--no-playlist',
-    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-    url
-  ];
+  const args = ['--dump-json', ...BASE_ARGS, url];
 
-  execFile('yt-dlp', args, { timeout: 30000 }, (err, stdout, stderr) => {
+  execFile('yt-dlp', args, { timeout: 35000 }, (err, stdout, stderr) => {
     if (err) {
-      console.error('[yt-dlp error]', stderr || err.message);
-      const msg = stderr?.includes('Private') || stderr?.includes('login')
-        ? 'This video is private or requires a login.'
-        : 'Could not extract video. It may have been deleted or is unavailable.';
-      return res.status(422).json({ error: msg });
+      console.error('[/info error]', stderr || err.message);
+      const isPrivate = (stderr || '').toLowerCase().includes('private') ||
+                        (stderr || '').toLowerCase().includes('login');
+      return res.status(422).json({
+        error: isPrivate
+          ? 'This content is private or requires a login.'
+          : 'Could not fetch video info. It may have been deleted or is unavailable.',
+      });
     }
 
     try {
-      const info = JSON.parse(stdout);
+      const info = JSON.parse(stdout.trim().split('\n')[0]);
 
-      // Build quality options from available formats
       const qualitySet = new Set(['best']);
-      if (info.formats) {
-        info.formats.forEach(f => {
-          if (f.height) {
-            if (f.height >= 1080) qualitySet.add('1080p');
-            else if (f.height >= 720) qualitySet.add('720p');
-            else if (f.height >= 480) qualitySet.add('480p');
-          }
-        });
-      }
+      (info.formats || []).forEach(f => {
+        if (f.height) {
+          if (f.height >= 1080) qualitySet.add('1080p');
+          else if (f.height >= 720)  qualitySet.add('720p');
+          else if (f.height >= 480)  qualitySet.add('480p');
+        }
+      });
 
       return res.json({
-        title: info.title || info.description?.slice(0, 60) || 'Video',
+        title:    info.title || info.description?.slice(0, 80) || 'Video',
         uploader: info.uploader || info.channel || info.uploader_id || null,
-        platform: detectPlatform(url) === 'pinterest' ? 'Pinterest' : 'Instagram',
+        platform: detectPlatform(url),
         duration: formatDuration(info.duration),
-        type: detectType(url),
+        type:     detectType(url),
         qualities: [...qualitySet],
         thumbnail: info.thumbnail || null,
-        url: info.webpage_url || url,
+        url:      info.webpage_url || url,
       });
     } catch (parseErr) {
+      console.error('[/info parse error]', parseErr.message);
       return res.status(500).json({ error: 'Failed to parse video data.' });
     }
   });
 });
 
-/**
- * GET /download?url=...&quality=...
- * Downloads to a temp file (required for MP4 moov atom), streams back, then deletes.
- */
 app.get('/download', (req, res) => {
   const { url, quality = 'best' } = req.query;
 
   if (!url || !isSupportedUrl(url)) {
-    return res.status(400).json({ error: 'Unsupported URL. Please paste an Instagram or Pinterest link.' });
+    return res.status(400).json({ error: 'Unsupported URL. Paste an Instagram or Pinterest link.' });
   }
 
-  // Format selectors: always request best video+audio and remux to mp4
-  // Fallback chain handles cases where ext=mp4 isn't available
-  const formatMap = {
-    best:    'bestvideo+bestaudio/bestvideo/best',
-    '1080p': 'bestvideo[height<=1080]+bestaudio/bestvideo[height<=1080]/best[height<=1080]',
-    '720p':  'bestvideo[height<=720]+bestaudio/bestvideo[height<=720]/best[height<=720]',
-    '480p':  'bestvideo[height<=480]+bestaudio/bestvideo[height<=480]/best[height<=480]',
-  };
-
-  const formatSelector = formatMap[quality] || formatMap['best'];
-
-  // Use a unique temp file — MP4 container CANNOT be piped to stdout (moov atom issue)
-  const tmpFile = path.join(os.tmpdir(), `gramlink_${Date.now()}.mp4`);
+  const formatSelector = FORMAT_MAP[quality] || FORMAT_MAP['best'];
+  const tmpBase = path.join(os.tmpdir(), `gramlink_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  const tmpOut  = `${tmpBase}.mp4`;
 
   const args = [
-    '--format', formatSelector,
-    '--merge-output-format', 'mp4',    // ffmpeg merges video+audio into mp4
-    '--remux-video', 'mp4',            // remux to mp4 if already merged
-    '--no-playlist',
-    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-    '-o', tmpFile,
-    url
+    '--format',               formatSelector,
+    '--merge-output-format',  'mp4',
+    '--remux-video',          'mp4',
+    '-o',                     tmpOut,
+    ...BASE_ARGS,
+    url,
   ];
 
-  console.log(`[download] ${url} @ ${quality} → ${tmpFile}`);
+  console.log(`[download] ${detectPlatform(url)} | ${quality} | ${url}`);
 
-  const ytdlp = spawn('yt-dlp', args);
+  const ytdlp  = spawn('yt-dlp', args);
+  let stderr   = '';
+  let finished = false;
 
-  let stderrLog = '';
-  ytdlp.stderr.on('data', (data) => {
-    stderrLog += data.toString();
-    process.stderr.write(`[yt-dlp] ${data}`);
+  ytdlp.stderr.on('data', d => {
+    stderr += d.toString();
+    process.stderr.write(`[yt-dlp] ${d}`);
   });
 
-  ytdlp.on('error', (err) => {
+  ytdlp.on('error', err => {
     console.error('[spawn error]', err.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'yt-dlp not found. Make sure it is installed.' });
-    }
+    if (!res.headersSent) res.status(500).json({ error: 'yt-dlp not found on this server.' });
   });
 
-  ytdlp.on('close', (code) => {
+  ytdlp.on('close', code => {
+    finished = true;
+
     if (code !== 0) {
-      console.error(`[yt-dlp] exited with code ${code}`);
+      console.error(`[yt-dlp] exit ${code}`);
+      cleanup(tmpBase);
       if (!res.headersSent) {
-        return res.status(500).json({ error: 'Failed to download video. It may be private or unavailable.' });
+        return res.status(500).json({
+          error: 'Download failed. The content may be private, deleted, or unsupported.',
+        });
       }
       return;
     }
 
-    // Stream the completed temp file to the browser
-    const fs = require('fs');
-    if (!fs.existsSync(tmpFile)) {
-      return res.status(500).json({ error: 'Output file not found after download.' });
+    const outFile = findOutput(tmpBase, tmpOut);
+
+    if (!outFile) {
+      console.error('[download] output file not found');
+      cleanup(tmpBase);
+      return res.status(500).json({ error: 'Output file missing after download.' });
     }
 
-    const stat = fs.statSync(tmpFile);
+    const stat = fs.statSync(outFile);
     res.setHeader('Content-Disposition', 'attachment; filename="gramlink-video.mp4"');
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Length', stat.size);
 
-    const readStream = fs.createReadStream(tmpFile);
-    readStream.pipe(res);
-
-    readStream.on('close', () => {
-      // Delete temp file after streaming
-      fs.unlink(tmpFile, (err) => {
-        if (err) console.error('[cleanup]', err.message);
-      });
+    const stream = fs.createReadStream(outFile);
+    stream.pipe(res);
+    stream.on('close', () => fs.unlink(outFile, () => {}));
+    stream.on('error', err => {
+      console.error('[stream error]', err.message);
+      fs.unlink(outFile, () => {});
     });
   });
 
-  // If client disconnects mid-download, kill yt-dlp and clean up
   req.on('close', () => {
-    ytdlp.kill('SIGTERM');
-    const fs = require('fs');
-    fs.unlink(tmpFile, () => {});
+    if (!finished) {
+      ytdlp.kill('SIGTERM');
+      cleanup(tmpBase);
+    }
   });
 });
 
-// ── Health check ───────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function findOutput(tmpBase, preferred) {
+  if (fs.existsSync(preferred)) return preferred;
+  const dir  = path.dirname(tmpBase);
+  const base = path.basename(tmpBase);
+  try {
+    const files = fs.readdirSync(dir).filter(f => f.startsWith(base));
+    const mp4   = files.find(f => f.endsWith('.mp4'));
+    if (mp4) return path.join(dir, mp4);
+    if (files.length) return path.join(dir, files[0]);
+  } catch {}
+  return null;
+}
+
+function cleanup(tmpBase) {
+  const dir  = path.dirname(tmpBase);
+  const base = path.basename(tmpBase);
+  try {
+    fs.readdirSync(dir)
+      .filter(f => f.startsWith(base))
+      .forEach(f => fs.unlink(path.join(dir, f), () => {}));
+  } catch {}
+}
+
+// ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   execFile('yt-dlp', ['--version'], (err, stdout) => {
-    res.json({
-      status: 'ok',
-      ytdlp: err ? 'not found' : stdout.trim(),
+    execFile('ffmpeg', ['-version'], (err2, stdout2) => {
+      res.json({
+        status: 'ok',
+        ytdlp:  err  ? 'not found' : stdout.trim(),
+        ffmpeg: err2 ? 'not found' : stdout2.split('\n')[0],
+      });
     });
   });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n  ╔════════════════════════════════════╗`);
-  console.log(`  ║   GramLink Server — Port ${PORT}     ║`);
-  console.log(`  ╚════════════════════════════════════╝\n`);
-  console.log(`  Frontend → http://localhost:${PORT}`);
-  console.log(`  Health   → http://localhost:${PORT}/health\n`);
+  console.log(`\n  GramLink Server — Port ${PORT}`);
+  console.log(`  http://localhost:${PORT}/health\n`);
 });
