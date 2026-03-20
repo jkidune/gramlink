@@ -1,413 +1,193 @@
-# GramLink — Setup Guide
-## Local Development in TRAE IDE + Deploy to Netlify & Railway
+# CLAUDE.md — GramLink Project Log
+
+> This file tracks all changes, decisions, architecture, and tech used in GramLink.
+> Updated as the project evolves.
 
 ---
 
-## What You're Building
+## Project Overview
 
-```
-Netlify (free)          Railway (free)
-┌─────────────┐         ┌──────────────────┐
-│  index.html │ ──────► │    server.js     │
-│  (frontend) │  fetch  │  Express + yt-dlp│
-└─────────────┘         └──────────────────┘
-```
+**GramLink** is a self-hosted Instagram video downloader.
+- Paste any Instagram reel, post, or story link
+- Backend extracts the video using `yt-dlp`
+- User gets a direct MP4 download
 
-Frontend → Netlify | Backend → Railway
+**Status:** v1.0 — Initial build  
+**Last updated:** 2025
 
 ---
 
-## Prerequisites — Install These First
+## Architecture
 
-Before opening TRAE, install these on your machine:
-
-### 1. Node.js (v18 or higher)
-Download from https://nodejs.org → choose the LTS version.
-
-Verify:
-```bash
-node --version   # should show v18.x.x or higher
-npm --version
+```
+User Browser
+     │
+     ▼
+Netlify (Static)          Railway (Node.js Server)
+┌─────────────┐           ┌──────────────────────────┐
+│  index.html │  ──────►  │  server.js (Express)     │
+│  (frontend) │  fetch()  │  /info    → yt-dlp dump  │
+└─────────────┘           │  /download → yt-dlp pipe │
+                          └──────────────────────────┘
 ```
 
-### 2. yt-dlp
-
-**Linux / WSL:**
-```bash
-sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
-  -o /usr/local/bin/yt-dlp
-sudo chmod a+rx /usr/local/bin/yt-dlp
-```
-
-**macOS (Homebrew):**
-```bash
-brew install yt-dlp
-```
-
-**Windows (without WSL):**
-1. Download `yt-dlp.exe` from https://github.com/yt-dlp/yt-dlp/releases
-2. Place it in `C:\Windows\System32\` (or any folder that's in your PATH)
-
-Verify:
-```bash
-yt-dlp --version   # should print something like 2024.xx.xx
-```
-
-### 3. Git
-Download from https://git-scm.com if not already installed.
-
-### 4. A GitHub account
-You'll need this to connect to Netlify and Railway later.
+- Frontend lives on **Netlify** (free static hosting)
+- Backend lives on **Railway** (free Node.js container hosting)
+- The two talk via HTTP — `API_BASE` in `index.html` points to the Railway URL
 
 ---
 
-## Part 1 — Set Up the Project in TRAE
+## Tech Stack
 
-### Step 1: Open TRAE and create the project folder
-
-1. Open **TRAE IDE**
-2. Click **File → Open Folder** (or the folder icon in the sidebar)
-3. Navigate to where you keep your projects (e.g. `Documents/projects/`)
-4. Create a new folder called **`gramlink`**
-5. Open that folder in TRAE
-
-You should now have an empty workspace called `gramlink`.
+| Layer | Technology | Version | Notes |
+|-------|-----------|---------|-------|
+| Frontend | HTML / CSS / JS | Vanilla | No framework needed |
+| Typography | Bebas Neue | Google Fonts | Display headings |
+| Typography | DM Sans | Google Fonts | Body text |
+| Typography | DM Mono | Google Fonts | Labels, monospace |
+| Backend | Node.js | ≥ 18.x | Runtime |
+| Backend | Express | 4.18.x | HTTP server |
+| Backend | cors | 2.8.x | Cross-origin requests |
+| Video extraction | yt-dlp | latest | System binary, not npm |
+| Frontend hosting | Netlify | — | Static deploy |
+| Backend hosting | Railway | — | Container deploy |
 
 ---
 
-### Step 2: Create the project files
-
-In the TRAE sidebar (Explorer panel), create the following files one by one.
-Right-click the explorer → **New File** for each:
+## Project Structure
 
 ```
 gramlink/
-├── index.html
-├── server.js
-├── package.json
-├── CLAUDE.md
-└── README.md
-```
-
-Now paste the contents of each file from the downloaded files into TRAE.
-
-> **Tip:** You can also drag and drop the downloaded files directly into the TRAE Explorer panel.
-
----
-
-### Step 3: Open the integrated terminal in TRAE
-
-- Press **Ctrl + `** (backtick) on Windows/Linux
-- Or **Cmd + `** on macOS
-- Or go to **Terminal → New Terminal** from the top menu
-
-You should see a terminal at the bottom of TRAE, already inside your `gramlink` folder.
-
----
-
-### Step 4: Install Node.js dependencies
-
-In the TRAE terminal, run:
-
-```bash
-npm install
-```
-
-You'll see it download Express and CORS. A `node_modules` folder will appear in your Explorer.
-
----
-
-### Step 5: Start the backend server
-
-```bash
-node server.js
-```
-
-You should see:
-```
-  ╔════════════════════════════════════╗
-  ║   GramLink Server — Port 3001     ║
-  ╚════════════════════════════════════╝
-
-  Frontend → http://localhost:3001
-  Health   → http://localhost:3001/health
+├── index.html      ← Full frontend (single file, no build step)
+├── server.js       ← Express backend
+├── package.json    ← Node dependencies
+├── CLAUDE.md       ← This file
+└── README.md       ← Setup instructions
 ```
 
 ---
 
-### Step 6: Open the frontend in your browser
+## API Endpoints
 
-Open your browser and go to:
-```
-http://localhost:3001
-```
+### `GET /info?url=<instagram_url>`
+Returns video metadata before download.
 
-You should see the GramLink UI. Try pasting an Instagram reel URL and clicking **Fetch**.
-
-To verify yt-dlp is working, also visit:
-```
-http://localhost:3001/health
-```
-
-It should return something like:
+**Response:**
 ```json
-{ "status": "ok", "ytdlp": "2024.11.04" }
+{
+  "title": "Video caption or title",
+  "uploader": "@username",
+  "duration": "0:30",
+  "type": "Reel",
+  "qualities": ["best", "720p", "480p"],
+  "thumbnail": "https://...",
+  "url": "https://www.instagram.com/reel/..."
+}
 ```
 
----
-
-### Step 7: Test a download
-
-1. Go to any public Instagram reel (e.g. from a public account)
-2. Copy the URL from the browser address bar
-3. Paste it into GramLink
-4. Click **Fetch** → wait a few seconds
-5. Select quality and click **Download MP4**
-
-If it works locally, you're ready to deploy. 🎉
+**Errors:**
+- `400` — Invalid or missing URL
+- `422` — Private video, deleted, or login required
+- `500` — yt-dlp parse failure
 
 ---
 
-## Part 2 — Push to GitHub
+### `GET /download?url=<url>&quality=<quality>`
+Streams MP4 directly to the browser as a file download.
 
-### Step 1: Create a .gitignore file
+**Quality options:** `best`, `1080p`, `720p`, `480p`
 
-In TRAE, create a new file called `.gitignore` with this content:
+**Format selector logic:**
+- `best` → `bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best`
+- `720p` → `bestvideo[height<=720][ext=mp4]+bestaudio/best[height<=720]`
+- etc.
 
-```
-node_modules/
-.env
-*.log
-.DS_Store
-```
-
----
-
-### Step 2: Initialize git and push
-
-In the TRAE terminal:
-
-```bash
-git init
-git add .
-git commit -m "Initial GramLink build"
-```
-
-Now go to **https://github.com/new** and create a new repository called `gramlink`.
-Keep it **Public** (required for free Netlify and Railway deploys).
-
-Back in the TRAE terminal, run the two commands GitHub shows you after creating the repo:
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/gramlink.git
-git branch -M main
-git push -u origin main
-```
-
-Your code is now on GitHub.
+Streams via `stdout` pipe — no temp files on disk.
 
 ---
 
-## Part 3 — Deploy the Backend to Railway
-
-Railway will run your `server.js` continuously (it supports Node.js out of the box).
-
-### Step 1: Sign up / log in to Railway
-
-Go to **https://railway.app** and sign in with your GitHub account.
+### `GET /health`
+Returns yt-dlp version. Useful for confirming the binary is installed on the server.
 
 ---
 
-### Step 2: Create a new project
+## Design System
 
-1. Click **New Project**
-2. Choose **Deploy from GitHub repo**
-3. Select your `gramlink` repository
-4. Railway will auto-detect Node.js and start deploying
+**Color palette:**
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--black` | `#080808` | Page background |
+| `--surface` | `#111111` | Card backgrounds |
+| `--border` | `#222222` | Default borders |
+| `--text-primary` | `#f0ede8` | Main text |
+| `--text-secondary` | `#6b6b6b` | Muted labels |
+| `--amber` | `#e8a830` | Accent color, CTAs |
+| `--green` | `#27a360` | Success states |
+| `--red` | `#c0392b` | Error states |
 
----
+**Fonts:**
+- Bebas Neue → Hero title, logo
+- DM Mono → Labels, URL input, badges, buttons
+- DM Sans (300/400/500) → Body, descriptions
 
-### Step 3: Add yt-dlp to Railway
-
-Railway uses a Docker-like build system. You need to tell it to install `yt-dlp`.
-
-In TRAE, create a new file called **`Dockerfile`** with this content:
-
-```dockerfile
-FROM node:20-slim
-
-# Install yt-dlp and its dependency (ffmpeg for merging audio+video)
-RUN apt-get update && apt-get install -y \
-    curl \
-    ffmpeg \
-    python3 \
-    --no-install-recommends && \
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
-    -o /usr/local/bin/yt-dlp && \
-    chmod a+rx /usr/local/bin/yt-dlp && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install --production
-
-COPY . .
-
-EXPOSE 3001
-
-CMD ["node", "server.js"]
-```
-
-Save, commit, and push:
-
-```bash
-git add Dockerfile
-git commit -m "Add Dockerfile for Railway deploy"
-git push
-```
-
-Railway will automatically redeploy when it sees the new commit.
+**UI principles:**
+- No rounded corners (border-radius: 2px only)
+- Dark-first, no gradients on structural elements
+- Amber as the single accent — used sparingly
+- Monospace for all data/technical elements
 
 ---
 
-### Step 4: Get your Railway URL
+## Environment Variables
 
-Once deployed:
-1. In the Railway dashboard, click your service
-2. Go to **Settings → Networking**
-3. Click **Generate Domain**
-4. You'll get a URL like: `https://gramlink-production.up.railway.app`
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3001` | Server listen port |
 
-Copy this URL — you'll need it in the next step.
-
----
-
-### Step 5: Test your Railway backend
-
-Open in browser:
-```
-https://your-railway-url.up.railway.app/health
-```
-
-You should see:
-```json
-{ "status": "ok", "ytdlp": "2024.xx.xx" }
-```
+Frontend config (hardcoded in `index.html`):
+| Constant | Default | Description |
+|----------|---------|-------------|
+| `API_BASE` | `http://localhost:3001` | Backend URL — **change this to Railway URL for production** |
 
 ---
 
-## Part 4 — Update the Frontend with the Railway URL
+## Known Limitations & Notes
 
-Back in TRAE, open `index.html`.
-
-Find this line near the bottom (inside the `<script>` tag):
-
-```javascript
-const API_BASE = 'http://localhost:3001';
-```
-
-Change it to your Railway URL:
-
-```javascript
-const API_BASE = 'https://your-railway-url.up.railway.app';
-```
-
-Save the file, commit, and push:
-
-```bash
-git add index.html
-git commit -m "Point frontend to Railway backend"
-git push
-```
+- **Instagram rate-limits** scrapers. Heavy use may result in temporary IP blocks.
+- **Private videos** cannot be downloaded without Instagram cookies. yt-dlp supports `--cookies` / `--cookies-from-browser` for authenticated downloads if needed later.
+- **Stories** expire after 24 hours — link must be valid at download time.
+- **Netlify Functions** were considered for the backend but rejected: yt-dlp is a system binary that can't run in Lambda-style serverless environments (no persistent filesystem, execution time limits, no binary support). Railway (Docker container) is the right fit.
+- yt-dlp must be kept updated as Instagram frequently changes its API. Run `yt-dlp -U` periodically on the server.
 
 ---
 
-## Part 5 — Deploy the Frontend to Netlify
+## Changelog
 
-### Step 1: Sign up / log in to Netlify
+### v1.1 — Download Fix
+- **Fixed: no audio / unsupported format on downloaded videos**
+  - Root cause 1: MP4 containers require seekable output (moov atom must be written at file start). Piping to stdout means ffmpeg can't seek back — file arrives broken or silent.
+  - Root cause 2: Format selectors with `[ext=mp4]` were too strict — if Instagram served a different codec, the fallback picked video-only or WebM.
+  - Fix: Download route now writes to a **temp file** first, streams the completed file back with correct `Content-Length`, then deletes it.
+  - Fix: Loosened format selectors to `bestvideo+bestaudio/bestvideo/best` with `--remux-video mp4` — ffmpeg remuxes any input into valid MP4.
+- Fixed Dockerfile: switched from `curl` binary download to `pip3 install yt-dlp` to avoid SSL cert failures on Railway.
 
-Go to **https://netlify.com** and sign in with your GitHub account.
-
----
-
-### Step 2: Create a new site
-
-1. Click **Add new site → Import an existing project**
-2. Choose **Deploy with GitHub**
-3. Authorize Netlify and select your `gramlink` repository
-
----
-
-### Step 3: Configure the build settings
-
-Netlify will ask for build settings. Use these:
-
-| Field | Value |
-|-------|-------|
-| Branch to deploy | `main` |
-| Build command | *(leave empty)* |
-| Publish directory | `.` (a single dot) |
-
-Click **Deploy site**.
+### v1.0 — Initial Build
+- Built full frontend (`index.html`) — dark editorial design with Bebas Neue, amber accents
+- Built Express backend (`server.js`) with `/info`, `/download`, `/health` endpoints
+- yt-dlp integration for metadata extraction and video streaming
+- Quality selector auto-populated from available formats
+- Three UI states: loading (animated progress), success (video info + download), error (descriptive message)
+- CORS enabled for cross-origin frontend → backend requests
+- Mobile responsive layout
 
 ---
 
-### Step 4: Get your Netlify URL
+## Future Ideas
 
-After deploy (takes ~30 seconds), Netlify gives you a URL like:
-```
-https://gramlink-abc123.netlify.app
-```
-
-You can also set a custom domain in **Site settings → Domain management**.
-
----
-
-### Step 5: Final test
-
-1. Open your Netlify URL
-2. Paste an Instagram reel link
-3. Click Fetch → Download
-
-Everything should work end to end. ✅
-
----
-
-## Ongoing Development Workflow
-
-Whenever you make changes in TRAE:
-
-```bash
-git add .
-git commit -m "Describe your change"
-git push
-```
-
-- **Netlify** auto-redeploys the frontend within ~30 seconds
-- **Railway** auto-redeploys the backend within ~1-2 minutes
-
----
-
-## Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| `yt-dlp: command not found` | Install yt-dlp and make sure it's in your PATH |
-| `Could not connect to the GramLink server` | Check `API_BASE` in `index.html` points to your Railway URL |
-| Video is private / login required | Only public videos are supported in v1 |
-| Railway deploy fails | Check the Dockerfile syntax; view build logs in Railway dashboard |
-| Netlify shows a blank page | Make sure Publish directory is set to `.` not `dist` or `public` |
-| CORS error in browser console | Make sure the Railway backend is running and CORS is enabled (it is by default) |
-
----
-
-## Stack Summary
-
-| What | Tech | Where |
-|------|------|-------|
-| Frontend | HTML + CSS + Vanilla JS | Netlify |
-| Backend | Node.js + Express | Railway |
-| Video extraction | yt-dlp (Python binary) | Railway (via Dockerfile) |
-| Fonts | Bebas Neue, DM Sans, DM Mono | Google Fonts CDN |
-| Version control | Git + GitHub | github.com |
+- [ ] Cookie-based auth support (for private videos)
+- [ ] Batch download (multiple URLs)
+- [ ] Audio-only download option (MP3)
+- [ ] Download history (localStorage)
+- [ ] Netlify + Railway one-click deploy button
+- [ ] Thumbnail preview before download
+- [ ] yt-dlp auto-update cron on Railway
