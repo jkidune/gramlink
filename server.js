@@ -108,7 +108,7 @@ app.get('/info', (req, res) => {
 
 /**
  * GET /download?url=...&quality=...
- * Streams the video file directly to the browser
+ * Downloads to a temp file (required for MP4 moov atom), streams back, then deletes.
  */
 app.get('/download', (req, res) => {
   const { url, quality = 'best' } = req.query;
@@ -117,39 +117,37 @@ app.get('/download', (req, res) => {
     return res.status(400).json({ error: 'Invalid or missing Instagram URL.' });
   }
 
-  // Map quality label to yt-dlp format selector
+  // Format selectors: always request best video+audio and remux to mp4
+  // Fallback chain handles cases where ext=mp4 isn't available
   const formatMap = {
-    best:  'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-    '1080p': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
-    '720p':  'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
-    '480p':  'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best',
+    best:    'bestvideo+bestaudio/bestvideo/best',
+    '1080p': 'bestvideo[height<=1080]+bestaudio/bestvideo[height<=1080]/best[height<=1080]',
+    '720p':  'bestvideo[height<=720]+bestaudio/bestvideo[height<=720]/best[height<=720]',
+    '480p':  'bestvideo[height<=480]+bestaudio/bestvideo[height<=480]/best[height<=480]',
   };
 
   const formatSelector = formatMap[quality] || formatMap['best'];
-  const filename = `gramlink_${Date.now()}.mp4`;
 
-  // Try to get a clean filename from the URL
-  const cleanFilename = `gramlink-video.mp4`;
-
-  res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
-  res.setHeader('Content-Type', 'video/mp4');
+  // Use a unique temp file — MP4 container CANNOT be piped to stdout (moov atom issue)
+  const tmpFile = path.join(os.tmpdir(), `gramlink_${Date.now()}.mp4`);
 
   const args = [
     '--format', formatSelector,
-    '--merge-output-format', 'mp4',
-    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-    '-o', '-',  // Output to stdout
+    '--merge-output-format', 'mp4',    // ffmpeg merges video+audio into mp4
+    '--remux-video', 'mp4',            // remux to mp4 if already merged
     '--no-playlist',
+    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+    '-o', tmpFile,
     url
   ];
 
-  console.log(`[download] ${url} @ ${quality}`);
+  console.log(`[download] ${url} @ ${quality} → ${tmpFile}`);
 
   const ytdlp = spawn('yt-dlp', args);
 
-  ytdlp.stdout.pipe(res);
-
+  let stderrLog = '';
   ytdlp.stderr.on('data', (data) => {
+    stderrLog += data.toString();
     process.stderr.write(`[yt-dlp] ${data}`);
   });
 
@@ -163,12 +161,39 @@ app.get('/download', (req, res) => {
   ytdlp.on('close', (code) => {
     if (code !== 0) {
       console.error(`[yt-dlp] exited with code ${code}`);
+      if (!res.headersSent) {
+        return res.status(500).json({ error: 'Failed to download video. It may be private or unavailable.' });
+      }
+      return;
     }
+
+    // Stream the completed temp file to the browser
+    const fs = require('fs');
+    if (!fs.existsSync(tmpFile)) {
+      return res.status(500).json({ error: 'Output file not found after download.' });
+    }
+
+    const stat = fs.statSync(tmpFile);
+    res.setHeader('Content-Disposition', 'attachment; filename="gramlink-video.mp4"');
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Length', stat.size);
+
+    const readStream = fs.createReadStream(tmpFile);
+    readStream.pipe(res);
+
+    readStream.on('close', () => {
+      // Delete temp file after streaming
+      fs.unlink(tmpFile, (err) => {
+        if (err) console.error('[cleanup]', err.message);
+      });
+    });
   });
 
-  // Clean up if client disconnects
+  // If client disconnects mid-download, kill yt-dlp and clean up
   req.on('close', () => {
     ytdlp.kill('SIGTERM');
+    const fs = require('fs');
+    fs.unlink(tmpFile, () => {});
   });
 });
 
