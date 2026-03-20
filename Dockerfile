@@ -1,14 +1,12 @@
 FROM node:20-slim
 
-# Install yt-dlp dependencies: curl (to download it), ffmpeg (to merge audio+video), python3
+# Install system deps + yt-dlp via pip (avoids curl SSL cert issues)
 RUN apt-get update && apt-get install -y \
-    curl \
     ffmpeg \
     python3 \
+    python3-pip \
     --no-install-recommends && \
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
-    -o /usr/local/bin/yt-dlp && \
-    chmod a+rx /usr/local/bin/yt-dlp && \
+    pip3 install --break-system-packages yt-dlp && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
