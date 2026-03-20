@@ -163,6 +163,25 @@ Frontend config (hardcoded in `index.html`):
 
 ## Changelog
 
+### v1.2 — Pinterest Support
+- Added Pinterest video download support
+- Replaced `isInstagramUrl()` with `isSupportedUrl()` — validates against a list of supported hostnames including all Pinterest regional domains (`pinterest.com`, `pinterest.co.uk`, `pinterest.fr`, etc.) and short links (`pin.it`)
+- Added `detectPlatform()` helper to distinguish Instagram vs Pinterest
+- Updated `detectType()` to return `'Pin'` for Pinterest URLs
+- `/info` response now includes a `platform` field (`'Instagram'` or `'Pinterest'`)
+- Frontend URL validation updated to accept both platforms
+- UI hints updated: "IG Reels", "IG Posts", "IG Stories", "Pinterest Pins"
+- Hero eyebrow updated to "Instagram & Pinterest Video Downloader"
+- Success card subtitle now shows correct platform name
+
+### v1.1 — Download Fix
+- **Fixed: no audio / unsupported format on downloaded videos**
+  - Root cause 1: MP4 containers require seekable output (moov atom must be written at file start). Piping to stdout means ffmpeg can't seek back — file arrives broken or silent.
+  - Root cause 2: Format selectors with `[ext=mp4]` were too strict — if Instagram served a different codec, the fallback picked video-only or WebM.
+  - Fix: Download route now writes to a **temp file** first, streams the completed file back with correct `Content-Length`, then deletes it.
+  - Fix: Loosened format selectors to `bestvideo+bestaudio/bestvideo/best` with `--remux-video mp4` — ffmpeg remuxes any input into valid MP4.
+- Fixed Dockerfile: switched from `curl` binary download to `pip3 install yt-dlp` to avoid SSL cert failures on Railway.
+
 ### v1.0 — Initial Build
 - Built full frontend (`index.html`) — dark editorial design with Bebas Neue, amber accents
 - Built Express backend (`server.js`) with `/info`, `/download`, `/health` endpoints

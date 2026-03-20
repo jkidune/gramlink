@@ -24,13 +24,33 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function isInstagramUrl(url) {
+const SUPPORTED_HOSTS = [
+  'www.instagram.com', 'instagram.com',
+  'www.pinterest.com', 'pinterest.com',
+  'pin.it',                              // Pinterest short links
+  'www.pinterest.co.uk', 'pinterest.co.uk',
+  'www.pinterest.fr',   'pinterest.fr',
+  'www.pinterest.de',   'pinterest.de',
+  'www.pinterest.ca',   'pinterest.ca',
+  'www.pinterest.com.au',
+];
+
+function isSupportedUrl(url) {
   try {
     const u = new URL(url);
-    return u.hostname === 'www.instagram.com' || u.hostname === 'instagram.com';
+    return SUPPORTED_HOSTS.some(h => u.hostname === h);
   } catch {
     return false;
   }
+}
+
+function detectPlatform(url) {
+  try {
+    const host = new URL(url).hostname;
+    if (host.includes('pinterest') || host === 'pin.it') return 'pinterest';
+    if (host.includes('instagram')) return 'instagram';
+  } catch {}
+  return 'unknown';
 }
 
 function formatDuration(seconds) {
@@ -41,6 +61,8 @@ function formatDuration(seconds) {
 }
 
 function detectType(url) {
+  const platform = detectPlatform(url);
+  if (platform === 'pinterest') return 'Pin';
   if (url.includes('/reel/')) return 'Reel';
   if (url.includes('/stories/')) return 'Story';
   if (url.includes('/p/')) return 'Post';
@@ -56,8 +78,8 @@ function detectType(url) {
 app.get('/info', (req, res) => {
   const { url } = req.query;
 
-  if (!url || !isInstagramUrl(url)) {
-    return res.status(400).json({ error: 'Invalid or missing Instagram URL.' });
+  if (!url || !isSupportedUrl(url)) {
+    return res.status(400).json({ error: 'Unsupported URL. Please paste an Instagram or Pinterest link.' });
   }
 
   const args = [
@@ -92,8 +114,9 @@ app.get('/info', (req, res) => {
       }
 
       return res.json({
-        title: info.title || info.description?.slice(0, 60) || 'Instagram Video',
-        uploader: info.uploader || info.channel || '@unknown',
+        title: info.title || info.description?.slice(0, 60) || 'Video',
+        uploader: info.uploader || info.channel || info.uploader_id || null,
+        platform: detectPlatform(url) === 'pinterest' ? 'Pinterest' : 'Instagram',
         duration: formatDuration(info.duration),
         type: detectType(url),
         qualities: [...qualitySet],
@@ -113,8 +136,8 @@ app.get('/info', (req, res) => {
 app.get('/download', (req, res) => {
   const { url, quality = 'best' } = req.query;
 
-  if (!url || !isInstagramUrl(url)) {
-    return res.status(400).json({ error: 'Invalid or missing Instagram URL.' });
+  if (!url || !isSupportedUrl(url)) {
+    return res.status(400).json({ error: 'Unsupported URL. Please paste an Instagram or Pinterest link.' });
   }
 
   // Format selectors: always request best video+audio and remux to mp4
