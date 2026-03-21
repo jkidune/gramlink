@@ -249,7 +249,28 @@ app.get('/health', (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n  GramLink Server — Port ${PORT}`);
-  console.log(`  http://localhost:${PORT}/health\n`);
+// Must bind to 0.0.0.0 in Railway/Docker containers (not just localhost)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[gramlink] Server started on 0.0.0.0:${PORT}`);
+  console.log(`[gramlink] NODE_ENV=${process.env.NODE_ENV || 'development'}`);
+
+  // Verify yt-dlp and ffmpeg are available at startup
+  execFile('yt-dlp', ['--version'], (err, stdout) => {
+    if (err) console.error('[gramlink] WARNING: yt-dlp not found!', err.message);
+    else console.log(`[gramlink] yt-dlp: ${stdout.trim()}`);
+  });
+  execFile('ffmpeg', ['-version'], (err, stdout) => {
+    if (err) console.error('[gramlink] WARNING: ffmpeg not found!', err.message);
+    else console.log(`[gramlink] ffmpeg: ${stdout.split('\n')[0]}`);
+  });
+});
+
+// Catch unhandled errors so Railway logs them instead of silent exit
+process.on('uncaughtException', (err) => {
+  console.error('[gramlink] Uncaught exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[gramlink] Unhandled rejection:', reason);
+  process.exit(1);
 });

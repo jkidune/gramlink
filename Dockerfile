@@ -1,6 +1,5 @@
 FROM node:20-slim
 
-# Install system deps + yt-dlp via pip (avoids curl SSL cert issues)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -16,6 +15,7 @@ RUN npm install --production
 
 COPY . .
 
+# Railway injects PORT dynamically — EXPOSE is just documentation
 EXPOSE 3001
 
-CMD ["node", "server.js"]
+CMD ["node", "--unhandled-rejections=strict", "server.js"]
