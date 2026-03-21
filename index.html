@@ -3,232 +3,413 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GramLink — Save Instagram Videos</title>
+  <title>GramLink — Download Videos Instantly</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #080808;
-      --surface: #111111;
-      --border: #222222;
-      --border-hover: #3a3a3a;
-      --text-primary: #f0ede8;
-      --text-secondary: #6b6b6b;
-      --text-muted: #3a3a3a;
-      --amber: #e8a830;
-      --amber-dim: #b07a18;
-      --amber-glow: rgba(232, 168, 48, 0.12);
-      --amber-glow-strong: rgba(232, 168, 48, 0.22);
-      --red: #c0392b;
-      --green: #27a360;
-      --green-glow: rgba(39, 163, 96, 0.12);
-      --radius: 2px;
+      --white: #ffffff;
+      --off-white: #fafaf9;
+      --card-bg: rgba(255, 255, 255, 0.97);
+      --text-primary: #1a1a1a;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border: #e5e7eb;
+      --border-focus: #d1c4b8;
+      --accent: #c8956c;
+      --accent-light: #f5ede7;
+      --accent-dark: #a67558;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --shadow-card: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-hover: 0 12px 50px rgba(0,0,0,0.16);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --radius-pill: 100px;
     }
 
     html, body {
       height: 100%;
-      background: var(--black);
-      color: var(--text-primary);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      line-height: 1.6;
+      font-family: 'Outfit', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0 1.5rem;
-    }
-
-    /* Ambient background */
-    body::before {
-      content: '';
+    /* ── Hero Background ── */
+    .hero-bg {
       position: fixed;
-      top: -40%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 700px;
-      height: 700px;
-      background: radial-gradient(ellipse at center, rgba(232, 168, 48, 0.04) 0%, transparent 70%);
-      pointer-events: none;
+      inset: 0;
       z-index: 0;
+      background-image: url('./public/hero.jpg');
+      background-size: cover;
+      background-position: center;
+      background-color: #d4e8d4;
+      /* Fallback gradient when no image is present */
+      background-image:
+        url('./public/hero.jpg'),
+        linear-gradient(135deg,
+          #c8dfc8 0%,
+          #b8d4e8 30%,
+          #e8d4c0 60%,
+          #d4c8e0 100%
+        );
     }
 
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.15) 0%,
+        rgba(255,255,255,0.05) 100%
+      );
+    }
+
+    /* ── Page Layout ── */
     .page {
       position: relative;
       z-index: 1;
-      width: 100%;
-      max-width: 620px;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
     }
 
-    /* Header */
-    header {
-      width: 100%;
-      padding: 3rem 0 0;
+    /* ── Nav ── */
+    nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.5);
     }
 
-    .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem;
-      letter-spacing: 0.12em;
-      color: var(--text-primary);
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
     }
 
-    .logo span {
-      color: var(--amber);
+    .nav-logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--text-primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      padding: 4px 10px;
-      border-radius: var(--radius);
+    .nav-logo-mark svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
     }
 
-    /* Hero */
-    .hero {
-      width: 100%;
-      padding: 6rem 0 3.5rem;
-      text-align: center;
+    .nav-logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
     }
 
-    .hero-eyebrow {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--amber);
-      margin-bottom: 1.5rem;
-    }
-
-    .hero-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(3.5rem, 12vw, 6.5rem);
-      line-height: 0.92;
-      letter-spacing: 0.04em;
+    .nav-logo-name {
+      font-size: 0.95rem;
+      font-weight: 600;
       color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo-sub {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-social {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-social:hover {
+      background: rgba(0,0,0,0.06);
+      color: var(--text-primary);
+    }
+
+    .nav-site-btn {
+      margin-left: 0.5rem;
+      padding: 0.45rem 1rem;
+      background: var(--text-primary);
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-site-btn:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    /* ── Main Content ── */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      gap: 3rem;
+    }
+
+    /* ── Hero Text (left side) ── */
+    .hero-text {
+      max-width: 400px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: var(--radius-pill);
+      padding: 5px 14px 5px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
       margin-bottom: 1.5rem;
+      letter-spacing: 0.02em;
     }
 
-    .hero-title em {
-      color: var(--amber);
-      font-style: normal;
+    .hero-tag-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
     }
 
-    .hero-sub {
-      font-size: 0.9rem;
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+      text-shadow: 0 1px 3px rgba(255,255,255,0.6);
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      color: var(--accent-dark);
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text-primary);
+      line-height: 1.7;
+      opacity: 0.8;
+      margin-bottom: 2rem;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+    }
+
+    .hero-platforms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .platform-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: var(--radius-pill);
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .platform-chip-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Download Card ── */
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      animation: fadeUp 0.6s 0.15s ease both;
+      flex-shrink: 0;
+    }
+
+    .card-header {
+      padding: 1.75rem 1.75rem 0;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.875rem;
       color: var(--text-secondary);
       font-weight: 300;
-      letter-spacing: 0.02em;
-      max-width: 360px;
-      margin: 0 auto;
+      margin-bottom: 1.5rem;
     }
 
-    /* Input area */
-    .input-section {
-      width: 100%;
-      margin-bottom: 2rem;
+    /* Platform tabs */
+    .platform-tabs {
+      display: flex;
+      gap: 6px;
+      background: #f3f4f6;
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 1.5rem;
+    }
+
+    .platform-tab {
+      flex: 1;
+      padding: 7px 4px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .platform-tab.active {
+      background: white;
+      color: var(--text-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .platform-tab:hover:not(.active) {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.5);
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* URL Input */
+    .card-body {
+      padding: 0 1.75rem 1.75rem;
     }
 
     .input-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 500;
       color: var(--text-secondary);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       display: block;
+      margin-bottom: 0.6rem;
+    }
+
+    .input-group {
+      display: flex;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
       margin-bottom: 0.75rem;
     }
 
-    .input-wrapper {
-      position: relative;
-      display: flex;
-      gap: 0;
+    .input-group:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.12);
     }
 
     .url-input {
       flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-right: none;
-      color: var(--text-primary);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.8rem;
-      padding: 1rem 1.25rem;
-      border-radius: var(--radius) 0 0 var(--radius);
+      border: none;
       outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      letter-spacing: 0.01em;
+      padding: 0.85rem 1rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      background: white;
     }
 
-    .url-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .url-input:focus {
-      border-color: var(--border-hover);
-      background: #161616;
-    }
-
-    .url-input:focus + .btn-fetch,
-    .url-input:hover + .btn-fetch {
-      border-color: var(--border-hover);
-    }
-
-    .url-input.has-value {
-      border-color: var(--amber-dim);
-    }
-
-    .url-input.has-value + .btn-fetch {
-      border-color: var(--amber-dim);
-    }
+    .url-input::placeholder { color: var(--text-muted); }
 
     .btn-fetch {
-      background: var(--amber);
-      border: 1px solid var(--amber);
-      color: var(--black);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      padding: 1rem 1.5rem;
-      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.85rem 1.25rem;
+      background: var(--text-primary);
+      border: none;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, opacity 0.2s, transform 0.1s;
+      transition: background 0.18s;
+      letter-spacing: 0.04em;
       white-space: nowrap;
-      min-width: 120px;
     }
 
-    .btn-fetch:hover:not(:disabled) {
-      background: #f5bc3a;
-    }
-
-    .btn-fetch:active:not(:disabled) {
-      transform: scale(0.98);
-    }
-
-    .btn-fetch:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    .btn-fetch:hover:not(:disabled) { background: #333; }
+    .btn-fetch:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .btn-fetch.loading {
       position: relative;
@@ -240,91 +421,40 @@
       position: absolute;
       width: 14px;
       height: 14px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border: 2px solid rgba(0,0,0,0.3);
-      border-top-color: var(--black);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.65s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: translate(-50%, -50%) rotate(360deg); }
+    .input-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
     }
 
-    /* Hint strip */
-    .hints {
-      display: flex;
-      gap: 1.5rem;
-      margin-top: 0.75rem;
-    }
+    /* Result area */
+    #resultArea { margin-top: 1rem; }
 
-    .hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      font-weight: 300;
-    }
-
-    .hint-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    /* Status / result card */
-    .result-card {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+    /* Result states */
+    .result {
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      animation: slideUp 0.3s ease;
-      margin-bottom: 2rem;
+      animation: fadeUp 0.25s ease;
     }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .result-card.state-loading {
-      border-color: var(--border);
-    }
-
-    .result-card.state-success {
-      border-color: #2a2a2a;
-      background: var(--surface);
-    }
-
-    .result-card.state-error {
-      border-color: rgba(192, 57, 43, 0.4);
-      background: rgba(192, 57, 43, 0.05);
-    }
-
-    .result-header {
+    .result-top {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 1rem;
     }
 
-    .result-card.state-success .result-header {
-      border-bottom-color: #1e1e1e;
-    }
-
-    .result-card.state-error .result-header {
-      border-bottom-color: rgba(192, 57, 43, 0.2);
-    }
-
-    .status-icon {
-      width: 28px;
-      height: 28px;
+    .result-icon {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -332,70 +462,83 @@
       flex-shrink: 0;
     }
 
-    .status-icon.loading {
-      background: var(--border);
-    }
+    .result.success { background: var(--green-bg); border: 1px solid #bbf7d0; }
+    .result.success .result-icon { background: #dcfce7; }
+    .result.error { background: var(--red-bg); border: 1px solid #fecaca; }
+    .result.error .result-icon { background: #fee2e2; }
+    .result.loading { background: #f9fafb; border: 1px solid var(--border); }
+    .result.loading .result-icon { background: #f3f4f6; }
 
-    .status-icon.loading svg {
-      animation: spin 1s linear infinite;
-      transform-origin: center;
-    }
-
-    .status-icon.success {
-      background: var(--green-glow);
-    }
-
-    .status-icon.error {
-      background: rgba(192, 57, 43, 0.15);
-    }
-
-    .status-text {
-      flex: 1;
-    }
-
-    .status-title {
-      font-size: 0.85rem;
-      font-weight: 500;
+    .result-title {
+      font-size: 0.875rem;
+      font-weight: 600;
       color: var(--text-primary);
     }
 
-    .status-sub {
+    .result-sub {
       font-size: 0.75rem;
       color: var(--text-secondary);
-      font-weight: 300;
       margin-top: 1px;
     }
 
     .result-body {
-      padding: 1.25rem;
+      padding: 0 1rem 1rem;
     }
 
-    /* Video info */
-    .video-meta {
+    .result.loading .result-body {
+      padding: 0 1rem 1rem;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+      animation: progressPulse 1.4s ease-in-out infinite;
+    }
+
+    .progress-text {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Video meta grid */
+    .meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      gap: 6px;
+      margin-bottom: 0.75rem;
     }
 
     .meta-item {
-      background: #0e0e0e;
+      background: white;
       border: 1px solid var(--border);
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
     }
 
+    .meta-item.full { grid-column: 1 / -1; }
+
     .meta-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.18em;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--text-muted);
       text-transform: uppercase;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
     }
 
     .meta-value {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 500;
       color: var(--text-primary);
       white-space: nowrap;
@@ -403,50 +546,44 @@
       text-overflow: ellipsis;
     }
 
-    /* Quality selector */
+    /* Quality pills */
     .quality-row {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      gap: 8px;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
     }
 
     .quality-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
+      font-size: 0.72rem;
+      font-weight: 500;
       color: var(--text-secondary);
-      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
-    .quality-pills {
-      display: flex;
-      gap: 6px;
-    }
+    .quality-pills { display: flex; gap: 5px; }
 
     .quality-pill {
       padding: 4px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
       color: var(--text-secondary);
-      background: transparent;
+      background: white;
       cursor: pointer;
       transition: all 0.15s;
     }
 
-    .quality-pill:hover {
-      border-color: var(--border-hover);
-      color: var(--text-primary);
-    }
+    .quality-pill:hover { border-color: var(--accent); color: var(--accent-dark); }
 
     .quality-pill.active {
-      border-color: var(--amber);
-      color: var(--amber);
-      background: var(--amber-glow);
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      background: var(--accent-light);
     }
 
     /* Download button */
@@ -454,349 +591,467 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       width: 100%;
-      padding: 0.9rem 1.5rem;
-      background: transparent;
-      border: 1px solid var(--amber);
-      color: var(--amber);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
+      padding: 0.875rem;
+      background: var(--text-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
       text-decoration: none;
-      border-radius: var(--radius);
       cursor: pointer;
-      transition: background 0.2s, color 0.2s;
+      transition: background 0.18s, transform 0.12s;
+      letter-spacing: 0.02em;
     }
 
-    .btn-download:hover {
-      background: var(--amber-glow-strong);
-    }
+    .btn-download:hover { background: #333; transform: translateY(-1px); }
 
-    .btn-download svg {
-      flex-shrink: 0;
-    }
-
-    /* Error state */
-    .error-message {
-      font-size: 0.85rem;
-      color: #e05a4a;
-      font-weight: 300;
+    /* Error */
+    .error-msg {
+      font-size: 0.82rem;
+      color: #b91c1c;
+      font-weight: 400;
       line-height: 1.6;
     }
 
     .error-hint {
-      margin-top: 0.5rem;
-      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Card Footer ── */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 1rem 1.75rem;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+    }
+
+    .card-footer-text {
       font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .footer-social {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .footer-social:hover {
+      background: #ebebeb;
+      color: var(--text-primary);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.5);
+    }
+
+    .footer-left {
+      font-size: 0.75rem;
       color: var(--text-secondary);
-      letter-spacing: 0.04em;
     }
 
-    /* Progress bar */
-    .progress-bar {
-      width: 100%;
-      height: 2px;
-      background: var(--border);
-      border-radius: 1px;
-      overflow: hidden;
-      margin-bottom: 0.75rem;
+    .footer-left a {
+      color: var(--accent-dark);
+      text-decoration: none;
+      font-weight: 500;
     }
 
-    .progress-fill {
-      height: 100%;
-      background: var(--amber);
-      border-radius: 1px;
-      width: 0%;
-      transition: width 0.4s ease;
-      animation: progressPulse 1.5s ease-in-out infinite;
+    .footer-right {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: translate(-50%,-50%) rotate(360deg); }
     }
 
     @keyframes progressPulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      50%       { opacity: 0.5; }
     }
 
-    .progress-text {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-secondary);
-      text-align: center;
-      letter-spacing: 0.1em;
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      main { flex-direction: column; align-items: center; padding: 2rem 1rem; }
+      .hero-text { max-width: 460px; text-align: center; }
+      .hero-platforms { justify-content: center; }
+      .hero-tag { margin: 0 auto 1.25rem; }
     }
 
-    /* Divider */
-    .divider {
-      width: 100%;
-      height: 1px;
-      background: var(--border);
-      margin: 2.5rem 0;
-    }
-
-    /* Footer */
-    footer {
-      width: 100%;
-      padding: 2rem 0 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .footer-note {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 300;
-    }
-
-    .footer-mark {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 0.85rem;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-    }
-
-    /* Responsive */
-    @media (max-width: 500px) {
-      .hints { flex-wrap: wrap; gap: 0.75rem; }
-      .video-meta { grid-template-columns: 1fr; }
-      .quality-row { flex-wrap: wrap; }
-      .hero-title { font-size: 3.2rem; }
+    @media (max-width: 480px) {
+      nav { padding: 1rem; }
+      .nav-logo-sub { display: none; }
+      .platform-tab { font-size: 0.65rem; padding: 7px 2px; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
 
-    <header>
-      <a class="logo" href="#">GRAM<span>LINK</span></a>
-      <span class="badge">Beta</span>
-    </header>
+<div class="hero-bg"></div>
 
-    <section class="hero">
-      <p class="hero-eyebrow">Instagram & Pinterest Video Downloader</p>
-      <h1 class="hero-title">PASTE.<br/><em>SAVE.</em><br/>DONE.</h1>
-      <p class="hero-sub">Drop any Instagram reel, post, or story link below and download it in seconds.</p>
-    </section>
+<div class="page">
 
-    <div class="input-section">
-      <label class="input-label" for="urlInput">Instagram URL</label>
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="urlInput"
-          class="url-input"
-          placeholder="https://www.instagram.com/reel/... or https://pin.it/..."
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button class="btn-fetch" id="fetchBtn" onclick="fetchVideo()">Fetch</button>
+  <!-- Nav -->
+  <nav>
+    <a class="nav-logo" href="https://barons-digital.com" target="_blank" rel="noopener">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
-      <div class="hints">
-        <span class="hint"><span class="hint-dot"></span>IG Reels</span>
-        <span class="hint"><span class="hint-dot"></span>IG Posts</span>
-        <span class="hint"><span class="hint-dot"></span>IG Stories</span>
-        <span class="hint"><span class="hint-dot"></span>Pinterest Pins</span>
-        <span class="hint"><span class="hint-dot"></span>No login needed</span>
+      <div class="nav-logo-text">
+        <span class="nav-logo-name">GramLink</span>
+        <span class="nav-logo-sub">by Barons Digital</span>
+      </div>
+    </a>
+
+    <div class="nav-links">
+      <!-- Instagram -->
+      <a class="nav-social" href="https://www.instagram.com/baronsdigital/" target="_blank" rel="noopener" title="Instagram">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
+        </svg>
+      </a>
+      <!-- Facebook -->
+      <a class="nav-social" href="https://web.facebook.com/baronsdigital" target="_blank" rel="noopener" title="Facebook">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+        </svg>
+      </a>
+      <!-- X/Twitter -->
+      <a class="nav-social" href="https://x.com/barons_dig19387" target="_blank" rel="noopener" title="X / Twitter">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      </a>
+      <a class="nav-site-btn" href="https://barons-digital.com" target="_blank" rel="noopener">Visit us</a>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main>
+
+    <!-- Hero text -->
+    <div class="hero-text">
+      <div class="hero-tag">
+        <div class="hero-tag-dot"></div>
+        Free · No login required
+      </div>
+      <h1 class="hero-headline">
+        Save any video,<br/><em>instantly.</em>
+      </h1>
+      <p class="hero-desc">
+        Paste a link from Instagram, Pinterest, TikTok or YouTube Shorts and download it in seconds. No account needed.
+      </p>
+      <div class="hero-platforms">
+        <div class="platform-chip">
+          <div class="platform-chip-icon" style="background:#e1306c;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="2" y="2" width="20" height="20" rx="5"/></svg>
+          </div>
+          Instagram
+        </div>
+        <div class="platform-chip">
+          <div class="platform-chip-icon" style="background:#e60023;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+          </div>
+          Pinterest
+        </div>
+        <div class="platform-chip">
+          <div class="platform-chip-icon" style="background:#000;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.93a8.18 8.18 0 004.78 1.52V7.01a4.85 4.85 0 01-1.01-.32z"/></svg>
+          </div>
+          TikTok
+        </div>
+        <div class="platform-chip">
+          <div class="platform-chip-icon" style="background:#ff0000;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+          </div>
+          YouTube Shorts
+        </div>
       </div>
     </div>
 
-    <div id="resultArea"></div>
+    <!-- Download Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Let's download! 👋</h2>
+        <p class="card-subtitle">Paste your link below and we'll handle the rest.</p>
 
-    <div class="divider"></div>
+        <!-- Platform tabs -->
+        <div class="platform-tabs">
+          <button class="platform-tab active" data-platform="instagram" onclick="setTab(this)">
+            <div class="tab-dot" style="background:#e1306c;"></div>
+            Instagram
+          </button>
+          <button class="platform-tab" data-platform="pinterest" onclick="setTab(this)">
+            <div class="tab-dot" style="background:#e60023;"></div>
+            Pinterest
+          </button>
+          <button class="platform-tab" data-platform="tiktok" onclick="setTab(this)">
+            <div class="tab-dot" style="background:#000;"></div>
+            TikTok
+          </button>
+          <button class="platform-tab" data-platform="youtube" onclick="setTab(this)">
+            <div class="tab-dot" style="background:#ff0000;"></div>
+            Shorts
+          </button>
+        </div>
+      </div>
 
-    <footer>
-      <span class="footer-note">For personal use only. Respect creator rights.</span>
-      <span class="footer-mark">GRAMLINK</span>
-    </footer>
+      <div class="card-body">
+        <label class="input-label" for="urlInput">Paste link here</label>
+        <div class="input-group">
+          <input
+            type="text"
+            id="urlInput"
+            class="url-input"
+            placeholder="https://www.instagram.com/reel/..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="btn-fetch" id="fetchBtn" onclick="fetchVideo()">Fetch</button>
+        </div>
+        <p class="input-hint">Supports Reels, Posts, Stories, Pins, TikToks & YouTube Shorts</p>
 
-  </div>
+        <div id="resultArea"></div>
+      </div>
 
-  <script>
-    // ── CONFIG ────────────────────────────────────────────────────────────────
-    // Point this to your backend server URL
-    const API_BASE = 'https://gramlink-production.up.railway.app';
-    // ─────────────────────────────────────────────────────────────────────────
+      <!-- Card footer social -->
+      <div class="card-footer">
+        <span class="card-footer-text">Made by</span>
+        <a href="https://barons-digital.com" target="_blank" rel="noopener" style="font-size:0.72rem;font-weight:600;color:var(--text-primary);text-decoration:none;">Barons Digital</a>
+        <span class="card-footer-text">·</span>
+        <a class="footer-social" href="https://www.instagram.com/baronsdigital/" target="_blank" title="Instagram">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+        </a>
+        <a class="footer-social" href="https://web.facebook.com/baronsdigital" target="_blank" title="Facebook">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a class="footer-social" href="https://x.com/barons_dig19387" target="_blank" title="X">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+    </div>
 
-    const urlInput = document.getElementById('urlInput');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const resultArea = document.getElementById('resultArea');
+  </main>
 
-    let activeQuality = 'best';
-    let videoData = null;
+  <!-- Footer -->
+  <footer>
+    <span class="footer-left">
+      For personal use only. Respect creator rights. ·
+      <a href="https://barons-digital.com" target="_blank">barons-digital.com</a>
+    </span>
+    <span class="footer-right">GramLink v1.4</span>
+  </footer>
 
-    urlInput.addEventListener('input', () => {
-      urlInput.classList.toggle('has-value', urlInput.value.trim().length > 0);
-    });
+</div>
 
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fetchVideo();
-    });
+<script>
+  // ── CONFIG ────────────────────────────────────────────────────────────────
+  const API_BASE = 'http://localhost:3001';
+  // ─────────────────────────────────────────────────────────────────────────
 
-    function setLoading(loading) {
-      fetchBtn.disabled = loading;
-      fetchBtn.classList.toggle('loading', loading);
-      if (!loading) fetchBtn.textContent = 'Fetch';
+  const PLACEHOLDERS = {
+    instagram: 'https://www.instagram.com/reel/...',
+    pinterest: 'https://pin.it/...',
+    tiktok:    'https://www.tiktok.com/@user/video/...',
+    youtube:   'https://youtube.com/shorts/...',
+  };
+
+  const urlInput   = document.getElementById('urlInput');
+  const fetchBtn   = document.getElementById('fetchBtn');
+  const resultArea = document.getElementById('resultArea');
+
+  let activeQuality = 'best';
+  let videoData     = null;
+  let activeTab     = 'instagram';
+
+  function setTab(btn) {
+    document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.platform;
+    urlInput.placeholder = PLACEHOLDERS[activeTab];
+    urlInput.value = '';
+    resultArea.innerHTML = '';
+  }
+
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') fetchVideo(); });
+
+  function setLoading(on) {
+    fetchBtn.disabled = on;
+    fetchBtn.classList.toggle('loading', on);
+    if (!on) fetchBtn.textContent = 'Fetch';
+  }
+
+  function isSupportedUrl(url) {
+    return url.includes('instagram.com') ||
+           url.includes('pinterest.com') ||
+           url.includes('pin.it') ||
+           url.includes('tiktok.com') ||
+           url.includes('youtube.com/shorts') ||
+           url.includes('youtu.be');
+  }
+
+  function renderLoading() {
+    resultArea.innerHTML = `
+      <div class="result loading">
+        <div class="result-top">
+          <div class="result-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </div>
+          <div>
+            <div class="result-title">Fetching video info</div>
+            <div class="result-sub">Resolving media…</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:25%"></div></div>
+          <div class="progress-text">Please wait…</div>
+        </div>
+      </div>`;
+    animateProgress();
+  }
+
+  function animateProgress() {
+    const fill = document.getElementById('pFill');
+    if (!fill) return;
+    let w = 25;
+    const iv = setInterval(() => {
+      if (!document.getElementById('pFill')) { clearInterval(iv); return; }
+      w = Math.min(w + Math.random() * 9, 88);
+      fill.style.width = w + '%';
+    }, 420);
+  }
+
+  function renderSuccess(data) {
+    videoData = data;
+    const pills = (data.qualities || ['best'])
+      .map(q => `<button class="quality-pill ${q === activeQuality ? 'active' : ''}" onclick="setQuality('${q}')">${q}</button>`)
+      .join('');
+
+    resultArea.innerHTML = `
+      <div class="result success">
+        <div class="result-top">
+          <div class="result-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="result-title">Video found</div>
+            <div class="result-sub">${data.platform || ''} ${data.uploader ? '· ' + data.uploader : ''}</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="meta-grid">
+            <div class="meta-item"><div class="meta-label">Duration</div><div class="meta-value">${data.duration || '—'}</div></div>
+            <div class="meta-item"><div class="meta-label">Type</div><div class="meta-value">${data.type || 'Video'}</div></div>
+            <div class="meta-item full"><div class="meta-label">Title</div><div class="meta-value">${data.title || 'Video'}</div></div>
+          </div>
+          <div class="quality-row">
+            <span class="quality-label">Quality</span>
+            <div class="quality-pills" id="qPills">${pills}</div>
+          </div>
+          <a id="dlLink" class="btn-download" href="${dlUrl()}" download>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download MP4
+          </a>
+        </div>
+      </div>`;
+  }
+
+  function renderError(msg, hint) {
+    resultArea.innerHTML = `
+      <div class="result error">
+        <div class="result-top">
+          <div class="result-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </div>
+          <div>
+            <div class="result-title">Could not fetch video</div>
+            <div class="result-sub">Something went wrong</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="error-msg">${msg}</div>
+          ${hint ? `<div class="error-hint">${hint}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function dlUrl() {
+    return `${API_BASE}/download?url=${encodeURIComponent(urlInput.value.trim())}&quality=${activeQuality}`;
+  }
+
+  function setQuality(q) {
+    activeQuality = q;
+    document.querySelectorAll('.quality-pill').forEach(el =>
+      el.classList.toggle('active', el.textContent.trim() === q));
+    const link = document.getElementById('dlLink');
+    if (link) link.href = dlUrl();
+  }
+
+  async function fetchVideo() {
+    const url = urlInput.value.trim();
+    if (!url) { urlInput.focus(); return; }
+
+    if (!isSupportedUrl(url)) {
+      renderError('Unsupported link.', 'Paste a link from Instagram, Pinterest, TikTok or YouTube Shorts.');
+      return;
     }
 
-    function renderLoading() {
-      resultArea.innerHTML = `
-        <div class="result-card state-loading">
-          <div class="result-header">
-            <div class="status-icon loading">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round">
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-              </svg>
-            </div>
-            <div class="status-text">
-              <div class="status-title">Fetching video info</div>
-              <div class="status-sub">Connecting to Instagram…</div>
-            </div>
-          </div>
-          <div class="result-body">
-            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:30%"></div></div>
-            <div class="progress-text">Resolving media…</div>
-          </div>
-        </div>`;
-      animateProgress();
-    }
+    setLoading(true);
+    renderLoading();
 
-    function animateProgress() {
-      const fill = document.getElementById('progressFill');
-      if (!fill) return;
-      let w = 30;
-      const iv = setInterval(() => {
-        if (!document.getElementById('progressFill')) { clearInterval(iv); return; }
-        w = Math.min(w + Math.random() * 8, 88);
-        fill.style.width = w + '%';
-      }, 400);
-    }
-
-    function renderSuccess(data) {
-      videoData = data;
-      const qualities = data.qualities || ['best', '720p', '480p'];
-      const pillsHtml = qualities.map(q =>
-        `<button class="quality-pill ${q === activeQuality ? 'active' : ''}" onclick="setQuality('${q}')">${q}</button>`
-      ).join('');
-
-      resultArea.innerHTML = `
-        <div class="result-card state-success">
-          <div class="result-header">
-            <div class="status-icon success">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27a360" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </div>
-            <div class="status-text">
-              <div class="status-title">Video found</div>
-              <div class="status-sub">${data.uploader || data.platform || 'Video'} · Ready to download</div>
-            </div>
-          </div>
-          <div class="result-body">
-            <div class="video-meta">
-              <div class="meta-item">
-                <div class="meta-label">Duration</div>
-                <div class="meta-value">${data.duration || '—'}</div>
-              </div>
-              <div class="meta-item">
-                <div class="meta-label">Type</div>
-                <div class="meta-value">${data.type || 'Video'}</div>
-              </div>
-              <div class="meta-item" style="grid-column: 1 / -1;">
-                <div class="meta-label">Title</div>
-                <div class="meta-value">${data.title || 'Video'}</div>
-              </div>
-            </div>
-            <div class="quality-row">
-              <span class="quality-label">Quality</span>
-              <div class="quality-pills" id="qualityPills">${pillsHtml}</div>
-            </div>
-            <a id="downloadLink" class="btn-download" href="${getDownloadUrl(data.url)}" download>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Download MP4
-            </a>
-          </div>
-        </div>`;
-    }
-
-    function renderError(message, hint) {
-      resultArea.innerHTML = `
-        <div class="result-card state-error">
-          <div class="result-header">
-            <div class="status-icon error">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e05a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </div>
-            <div class="status-text">
-              <div class="status-title">Could not fetch video</div>
-              <div class="status-sub">Something went wrong</div>
-            </div>
-          </div>
-          <div class="result-body">
-            <p class="error-message">${message}</p>
-            ${hint ? `<p class="error-hint">${hint}</p>` : ''}
-          </div>
-        </div>`;
-    }
-
-    function getDownloadUrl(videoUrl) {
-      if (!videoUrl) return '#';
-      return `${API_BASE}/download?url=${encodeURIComponent(urlInput.value.trim())}&quality=${activeQuality}`;
-    }
-
-    function setQuality(q) {
-      activeQuality = q;
-      document.querySelectorAll('.quality-pill').forEach(el => {
-        el.classList.toggle('active', el.textContent.trim() === q);
-      });
-      const link = document.getElementById('downloadLink');
-      if (link && videoData) {
-        link.href = getDownloadUrl(videoData.url);
+    try {
+      const res  = await fetch(`${API_BASE}/info?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed to fetch');
+      renderSuccess(data);
+    } catch (err) {
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        renderError('Could not connect to the GramLink server.', 'Make sure the backend is running on ' + API_BASE);
+      } else {
+        renderError(err.message || 'An unexpected error occurred.', 'The video may be private or unavailable.');
       }
+    } finally {
+      setLoading(false);
     }
-
-    async function fetchVideo() {
-      const url = urlInput.value.trim();
-      if (!url) {
-        urlInput.focus();
-        return;
-      }
-
-      if (!url.includes('instagram.com') && !url.includes('pinterest.com') && !url.includes('pinterest.co') && !url.includes('pin.it')) {
-        renderError('That doesn\'t look like a supported URL.', 'Try: instagram.com/reel/... or pinterest.com/pin/...');
-        return;
-      }
-
-      setLoading(true);
-      renderLoading();
-
-      try {
-        const res = await fetch(`${API_BASE}/info?url=${encodeURIComponent(url)}`);
-        const data = await res.json();
-
-        if (!res.ok || data.error) {
-          throw new Error(data.error || 'Failed to fetch video info');
-        }
-
-        renderSuccess(data);
-      } catch (err) {
-        if (err.name === 'TypeError' && err.message.includes('fetch')) {
-          renderError(
-            'Could not connect to the GramLink server.',
-            'Make sure the backend is running on ' + API_BASE
-          );
-        } else {
-          renderError(err.message || 'An unexpected error occurred.', 'The video may be private or unavailable.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-  </script>
+  }
+</script>
 </body>
 </html>

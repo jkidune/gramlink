@@ -163,6 +163,32 @@ Frontend config (hardcoded in `index.html`):
 
 ## Changelog
 
+### v1.5 — Full UI Redesign (Light & Modern)
+- Complete visual overhaul — replaced dark editorial theme with light, welcoming design
+- **Typography**: Playfair Display (serif, italic) for headings + Outfit (geometric sans) for UI
+- **Color palette**: Warm whites, soft terracotta accent (#c8956c), clean grays
+- **Layout**: Two-column hero — left side large headline + platform chips, right side floating white download card
+- **Hero background**: Full-screen background image via `./public/hero.jpg` with gradient fallback. Drop any landscape image named `hero.jpg` into the `/public` folder to customise.
+- **Navigation**: Frosted glass navbar with Barons Digital logo, social icons (Instagram, Facebook, X), "Visit us" button
+- **Platform tabs**: Instagram / Pinterest / TikTok / YouTube Shorts selector inside the card — auto-switches placeholder URL
+- **Card design**: White card with subtle shadow, rounded corners, clean meta grid, quality pills, warm accent download button
+- **Branding**: Barons Digital name + social links in both nav and card footer
+- **Social links added**:
+  - Instagram: https://www.instagram.com/baronsdigital/
+  - Facebook: https://web.facebook.com/baronsdigital
+  - X/Twitter: https://x.com/barons_dig19387
+  - Website: https://barons-digital.com
+- Created `public/` folder for hero images
+
+### v1.4 — Production Fixes
+- **Fixed: "Unexpected token '<'" error** — `API_BASE` in `index.html` had a trailing slash (`/`), causing double-slash URLs (`//info`). Railway returned HTML 404 pages instead of JSON. Fix: remove trailing slash from `API_BASE`.
+- **Fixed: server not reachable in Railway container** — `app.listen()` was binding to `localhost` by default. Changed to `0.0.0.0` — required for all Docker/Railway containers.
+- Added startup diagnostics: server logs yt-dlp and ffmpeg versions on boot.
+- Added `process.on('uncaughtException')` and `unhandledRejection` handlers so Railway captures crash reasons in logs.
+- Added `--unhandled-rejections=strict` flag to Node startup.
+- Added `railway.json` to explicitly force Dockerfile builder.
+- **Fixed: Pinterest short links not downloading** — Pinterest share links use `https://pin.it/...` format (not `pinterest.com/pin/...`). `pin.it` was already in `SUPPORTED_HOSTS` on the backend but frontend URL validation needed updating. Note for future: always test with real `pin.it` short URLs, not `pinterest.com` pin URLs directly.
+
 ### v1.3 — Audio Fix & Robust Download
 - **Fixed: no audio on Instagram videos (again)** — format fallback chain previously included `bestvideo` (video-only) before `best` (combined). Removed that middle step. New chain: `bestvideo+bestaudio/best` — if streams can't be merged, fall back to best single combined stream (always has audio), never video-only.
 - **Fixed: Pinterest downloads failing** — yt-dlp writes intermediate fragment files (`tmpBase.f123.mp4`, `tmpBase.f456.m4a`) before producing final output. Old code checked for `tmpFile` exactly; if the filename differed slightly it returned "file not found". New `findOutput()` function scans the temp dir for any file starting with the unique `tmpBase` prefix, prefers `.mp4`.
