@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "gramlink",
   "version": "1.0.0",
   "description": "GramLink — Instagram video downloader",
